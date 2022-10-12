@@ -5,13 +5,13 @@ spring:
     name: project-A
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://172.10.61.171:5432/edu-admin
+    url: jdbc:postgresql://xxx
     username: dev
     password: mko0PL<.;?
   cloud:
     nacos:
       discovery:
-        server-addr: 172.10.70.16:8848 #配置nacos地址
+        server-addr: xxx #配置nacos地址
   sleuth:
     propagation:
       tag:
