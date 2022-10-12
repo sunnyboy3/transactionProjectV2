@@ -7,7 +7,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://xxx
     username: dev
-    password: mko0PL<.;?
+    password: xxx
   cloud:
     nacos:
       discovery:
