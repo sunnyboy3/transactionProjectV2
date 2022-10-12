@@ -1,0 +1,27 @@
+server:
+  port: 9003
+spring:
+  application:
+    name: project-A
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://172.10.61.171:5432/edu-admin
+    username: dev
+    password: mko0PL<.;?
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 172.10.70.16:8848 #配置nacos地址
+  sleuth:
+    propagation:
+      tag:
+        whitelisted-keys:
+          - transaction-trace-id
+    propagation-keys:
+      - transaction-trace-id
+#打开全部监控端点
+maagement:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
