@@ -5,37 +5,37 @@
     
     create table transaction_project
     (
-    id                serial       not null
-    constraint transaction_project_pk
-    primary key,
-    project_name      varchar(100) not null,
-    transaction_group varchar(100) not null,
-    feign_client_name varchar(100)
+        id                serial       not null
+        constraint transaction_project_pk
+        primary key,
+        project_name      varchar(100) not null,
+        transaction_group varchar(100) not null,
+        feign_client_name varchar(100)
     );
 
     create table transaction_request_logs
     (
-    id                serial            not null
-    constraint transaction_request_logs_pk
-    primary key,
-    trace_id          varchar(100)      not null,
-    project_name      varchar(100)      not null,
-    in_param          varchar,
-    out_param         varchar,
-    status            integer default 0 not null,
-    group_name        varchar(100),
-    feign_client_name varchar(100),
-    sort              integer
+        id                serial            not null
+        constraint transaction_request_logs_pk
+        primary key,
+        trace_id          varchar(100)      not null,
+        project_name      varchar(100)      not null,
+        in_param          varchar,
+        out_param         varchar,
+        status            integer default 0 not null,
+        group_name        varchar(100),
+        feign_client_name varchar(100),
+        sort              integer
     );
 
 测试数据脚本
 
     create table transaction_user
     (
-    id       serial  not null
-    constraint transaction_user_pk
-    primary key,
-    username varchar not null,
-    age      integer not null
+        id       serial  not null
+        constraint transaction_user_pk
+        primary key,
+        username varchar not null,
+        age      integer not null
     );
     
