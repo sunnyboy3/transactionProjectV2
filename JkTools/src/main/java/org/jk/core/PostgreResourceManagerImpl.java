@@ -115,7 +115,6 @@ public class PostgreResourceManagerImpl implements ResourceManager {
     }
 
     private String coverRequestParam(HttpServletRequest request) throws IOException {
-        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         ChildHttpServletRequestWrapper requestWrapper = new ChildHttpServletRequestWrapper(request);
         String contentType = requestWrapper.getContentType();
         if (MediaType.APPLICATION_JSON_VALUE.equals(contentType)){
