@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * @ClassName ResourceManager
- * @Description TODO
+ * @Description 日志资源管理
  * @Author wp
  * @Date 2022/10/13 14:27
  **/
