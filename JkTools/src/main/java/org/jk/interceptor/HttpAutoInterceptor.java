@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.jk.annotation.GlobalTransactional;
+import org.jk.core.ResourceManager;
+import org.jk.core.ResourceManagerImpl;
 import org.jk.entity.GlobalTransaction;
 import org.jk.entity.TransactionProject;
 import org.jk.entity.TransactionRequestLogs;
@@ -151,29 +153,8 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
     }
 
     private void saveProjectData(GlobalTransactional transactional,HttpServletRequest request) throws IOException {
-        Object[] args = new Object[]{TraceIdUtils.getTraceId(),ApplicationContextUtils.getProjectName(),coverRequestParam(request),0,transactional.groupName(),transactional.feignClientName(),transactional.sort()};
-        String saveSql = "insert into service_public.transaction_request_logs(trace_id,project_name,in_param,status,group_name,feign_client_name,sort) values(?,?,?,?,?,?,?)";
-
-        //存储日志信息
-        TransactionRequestLogs logs = new TransactionRequestLogs();
-        logs.setProject_name(ApplicationContextUtils.getProjectName());
-        logs.setFeign_client_name(transactional.feignClientName());
-        logs.setGroup_name(transactional.groupName());
-        logs.setStatus(0);
-        logs.setTrace_id(TraceIdUtils.getTraceId());
-        logs.setSort(transactional.sort());
-        TransactionRequestLogsUtils.setLogs(logs);
-
-        super.jdbcTemplate.update(saveSql,args);
-    }
-
-    private Object coverRequestParam(HttpServletRequest request) throws IOException {
-        ChildHttpServletRequestWrapper requestWrapper = new ChildHttpServletRequestWrapper(request);
-        String contentType = requestWrapper.getContentType();
-        if (MediaType.APPLICATION_JSON_VALUE.equals(contentType)){
-            return RequestUtils.request2JsonString(requestWrapper);
-        }
-        return "";
+        ResourceManager resourceManager = (ResourceManager)ApplicationContextUtils.getApplicationContext().getBean(ResourceManagerImpl.class);
+        resourceManager.saveLogs(transactional,request);
     }
 
     @Override

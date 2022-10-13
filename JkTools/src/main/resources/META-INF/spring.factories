@@ -1,3 +1,4 @@
 # Auto Configure
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.jk.annotation.GlobalTransactionalConfiguration
+org.jk.annotation.GlobalTransactionalConfiguration,\
+org.jk.core.ResourceManagerImpl
