@@ -77,12 +77,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
             HandlerMethod handlerMethod = (HandlerMethod) handler;
             GlobalTransactional transactional = handlerMethod.getMethodAnnotation(GlobalTransactional.class);
             if (Objects.nonNull(transactional)) {
-                List<TransactionRequestLogs> transactionRequestLogs = super.jdbcTemplate.query("select id,trace_id,project_name,in_param,out_param,group_name,status,feign_client_name,sort from service_public.transaction_request_logs where trace_id = ?", new String[]{traceId}, new BeanPropertyRowMapper<TransactionRequestLogs>(TransactionRequestLogs.class) {
-                    @Override
-                    protected void initBeanWrapper(BeanWrapper bw) {
-                        super.initBeanWrapper(bw);
-                    }
-                });
+                List<TransactionRequestLogs> transactionRequestLogs = ApplicationContextUtils.getResourceManager().findLogsByTraceId(traceId);
                 if (!CollectionUtils.isEmpty(transactionRequestLogs)) {
                     //表示非第一次请求
                     List<TransactionRequestLogs> selfRequestLogs = transactionRequestLogs.stream().sorted(Comparator.comparing(TransactionRequestLogs::getSort)).filter(k ->ApplicationContextUtils.getProjectName().equals(k.getProject_name()) && transactional.groupName().equals(k.getGroup_name()) && transactional.sort() == k.getSort()).collect(Collectors.toList());
@@ -153,8 +148,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
     }
 
     private void saveProjectData(GlobalTransactional transactional,HttpServletRequest request) throws IOException {
-        ResourceManager resourceManager = (ResourceManager)ApplicationContextUtils.getApplicationContext().getBean(ResourceManagerImpl.class);
-        resourceManager.saveLogs(transactional,request);
+        ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
     }
 
     @Override
@@ -166,30 +160,9 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
     }
 
     private void operationDatabases(){
-        //这里初始化事务组数据
-        String projectName = ApplicationContextUtils.getProjectName();
-        //获取jdbcTemplate
-        super.jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
-
-        //获取注解数据
-        List<AnnotationEntity> values = AnnotationUtils.getRequestMappingValue(TRANSACTION_PACKAGE);
-        if (!CollectionUtils.isEmpty(values)){
-            List<TransactionProject> projects = values.stream().map(k -> {
-                TransactionProject transactionProject = new TransactionProject();
-                transactionProject.setProject_name(projectName);
-                transactionProject.setTransaction_group(k.getGroupName());
-                transactionProject.setFeign_client_name(k.getFeignClientName());
-                return transactionProject;
-            }).collect(Collectors.toList());
-            //与数据库比对 TODO 细节还需要优化如果动态tranceId表中存在数据则是不能进行删除操作
-            String deleteSql = "delete from service_public.transaction_project where project_name = ? and transaction_group = ? and feign_client_name = ?";
-            List<Object[]> projectArray = projects.stream().map(k -> {
-                return new String[]{k.getProject_name(), k.getTransaction_group(),k.getFeign_client_name()};
-            }).collect(Collectors.toList());
-            super.jdbcTemplate.batchUpdate(deleteSql,projectArray);
-            String saveSql = "insert into service_public.transaction_project(project_name,transaction_group,feign_client_name) values(?,?,?)";
-            super.jdbcTemplate.batchUpdate(saveSql,projectArray);
-        }
+        //TODO 细节还需要优化如果动态tranceId表中存在数据则是不能进行删除操作
+        ApplicationContextUtils.getResourceManager().deleteProjectData();
+        ApplicationContextUtils.getResourceManager().saveProjectData();
     }
 
     /**

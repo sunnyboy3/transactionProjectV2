@@ -26,7 +26,7 @@ public class CustomizeTransactionManager extends DataSourceTransactionManager {
         TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
         if (Objects.nonNull(logs)) {
             logs.setStatus(SUCCESS_STATUS);
-            updateLogsStatus(logs);
+            ApplicationContextUtils.getResourceManager().updateLogsStatus(logs);
         }
         super.doCommit(status);
     }
@@ -38,18 +38,8 @@ public class CustomizeTransactionManager extends DataSourceTransactionManager {
         TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
         if (Objects.nonNull(logs)){
             logs.setStatus(FAIL_STATUS);
-            updateLogsStatus(logs);
+            ApplicationContextUtils.getResourceManager().updateLogsStatus(logs);
         }
 
-    }
-
-    //修改事务日志状态
-    private void updateLogsStatus(TransactionRequestLogs logs){
-        String updateSql = "update service_public.transaction_request_logs set status = ? where trace_id = ? and project_name = ? and group_name = ? and feign_client_name = ?";
-        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
-        int num = jdbcTemplate.update(updateSql,logs.getStatus(),logs.getTrace_id(),logs.getProject_name(),logs.getGroup_name(),logs.getFeign_client_name());
-        if (num == 0){
-            logger.error("transaction error! transaction desc["+logs+"]");
-        }
     }
 }
