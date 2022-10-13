@@ -103,10 +103,10 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                         }
                     } else {
                         //不存在数据
-                        saveProjectData(transactional, request);
+                        ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
                     }
                 } else {
-                    saveProjectData(transactional, request);
+                    ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
                 }
             }
         }
@@ -145,10 +145,6 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                 }
             }
         }
-    }
-
-    private void saveProjectData(GlobalTransactional transactional,HttpServletRequest request) throws IOException {
-        ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
     }
 
     @Override
