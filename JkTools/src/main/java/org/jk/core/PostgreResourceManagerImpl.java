@@ -1,11 +1,9 @@
 package org.jk.core;
 
-import org.jk.annotation.CustomizeTransactionManager;
 import org.jk.annotation.GlobalTransactional;
 import org.jk.entity.TransactionProject;
 import org.jk.entity.TransactionRequestLogs;
 import org.jk.interceptor.ChildHttpServletRequestWrapper;
-import org.jk.interceptor.HttpAutoInterceptor;
 import org.jk.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +13,8 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,9 +24,9 @@ import java.util.stream.Collectors;
  * @Author wp
  * @Date 2022/10/13 14:27
  **/
-public class ResourceManagerImpl implements ResourceManager {
+public class PostgreResourceManagerImpl implements ResourceManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceManagerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgreResourceManagerImpl.class);
 
     private static final String SAVE_LOGS = "insert into service_public.transaction_request_logs(trace_id,project_name,in_param,status,group_name,feign_client_name,sort) values(?,?,?,?,?,?,?)";
     private static final String DELETE_PROJECT = "delete from service_public.transaction_project where project_name = ? and transaction_group = ? and feign_client_name = ?";
@@ -45,11 +38,11 @@ public class ResourceManagerImpl implements ResourceManager {
 
     private static final int INIT_LOGS_STATUS = 0;
 
-    @Resource
-    private JdbcTemplate jdbcTemplate;
-
     @Override
     public void updateLogsStatus(TransactionRequestLogs logs) {
+
+        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
+
         int num = jdbcTemplate.update(UPDATE_LOGS_STATUS,logs.getStatus(),logs.getTrace_id(),logs.getProject_name(),logs.getGroup_name(),logs.getFeign_client_name());
         if (num == 0){
             logger.error("transaction error! transaction desc: {}" + logs.toString());
@@ -58,6 +51,8 @@ public class ResourceManagerImpl implements ResourceManager {
 
     @Override
     public List<TransactionRequestLogs> findLogsByTraceId(String traceId) {
+
+        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         List<TransactionRequestLogs> transactionRequestLogs = jdbcTemplate.query(QUERY_LOGS_BY_TRACEID, new String[]{traceId}, new BeanPropertyRowMapper<TransactionRequestLogs>(TransactionRequestLogs.class) {
             @Override
             protected void initBeanWrapper(BeanWrapper bw) {
@@ -79,6 +74,7 @@ public class ResourceManagerImpl implements ResourceManager {
     }
 
     private void operaProjectData(String operaSql){
+        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         //获取注解数据
         List<AnnotationEntity> values = AnnotationUtils.getRequestMappingValue(TRANSACTION_PACKAGE);
         if (!CollectionUtils.isEmpty(values)){
@@ -99,8 +95,9 @@ public class ResourceManagerImpl implements ResourceManager {
 
     @Override
     public void saveLogs(GlobalTransactional transactional, HttpServletRequest request) {
+        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         try {
-            Object[] args = new Object[]{TraceIdUtils.getTraceId(),ApplicationContextUtils.getProjectName(),coverRequestParam(request),0,transactional.groupName(),transactional.feignClientName(),transactional.sort()};
+            Object[] args = new Object[]{ApplicationContextUtils.getTraceIdManager().getTraceId(),ApplicationContextUtils.getProjectName(),coverRequestParam(request),0,transactional.groupName(),transactional.feignClientName(),transactional.sort()};
 
             //存储日志信息
             TransactionRequestLogs logs = new TransactionRequestLogs();
@@ -108,7 +105,7 @@ public class ResourceManagerImpl implements ResourceManager {
             logs.setFeign_client_name(transactional.feignClientName());
             logs.setGroup_name(transactional.groupName());
             logs.setStatus(INIT_LOGS_STATUS);
-            logs.setTrace_id(TraceIdUtils.getTraceId());
+            logs.setTrace_id(ApplicationContextUtils.getTraceIdManager().getTraceId());
             logs.setSort(transactional.sort());
             TransactionRequestLogsUtils.setLogs(logs);
             jdbcTemplate.update(SAVE_LOGS,args);
@@ -118,6 +115,7 @@ public class ResourceManagerImpl implements ResourceManager {
     }
 
     private String coverRequestParam(HttpServletRequest request) throws IOException {
+        JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         ChildHttpServletRequestWrapper requestWrapper = new ChildHttpServletRequestWrapper(request);
         String contentType = requestWrapper.getContentType();
         if (MediaType.APPLICATION_JSON_VALUE.equals(contentType)){

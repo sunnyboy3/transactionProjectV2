@@ -4,8 +4,6 @@ import org.jk.client.StockOpenFeignClient;
 import org.jk.entity.ParentServiceImpl;
 import org.jk.entity.User;
 import org.jk.service.TestService;
-import org.jk.utils.ApplicationContextUtils;
-import org.jk.utils.TraceIdUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

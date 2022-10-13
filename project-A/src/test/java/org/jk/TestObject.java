@@ -1,7 +1,7 @@
 package org.jk;
 
 import org.jk.core.ResourceManager;
-import org.jk.core.ResourceManagerImpl;
+import org.jk.core.PostgreResourceManagerImpl;
 import org.jk.utils.ApplicationContextUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class TestObject {
 
     @Test
     public void getResourceManager(){
-        ResourceManager resourceManager = (ResourceManager)ApplicationContextUtils.getApplicationContext().getBean(ResourceManagerImpl.class);
+        ResourceManager resourceManager = (ResourceManager)ApplicationContextUtils.getApplicationContext().getBean(PostgreResourceManagerImpl.class);
 //        resourceManager.saveLogs();
     }
 }

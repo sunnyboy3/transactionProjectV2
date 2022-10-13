@@ -4,22 +4,15 @@ import com.google.gson.Gson;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.jk.annotation.GlobalTransactional;
-import org.jk.core.ResourceManager;
-import org.jk.core.ResourceManagerImpl;
 import org.jk.entity.GlobalTransaction;
-import org.jk.entity.TransactionProject;
 import org.jk.entity.TransactionRequestLogs;
 import org.jk.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -27,10 +20,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -48,8 +38,8 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
 
     @Override
     public void apply(RequestTemplate template) {
-        if (!StringUtils.isEmpty(TraceIdUtils.getTransactionTraceId())){
-            template.header(TRANSACTION_TRACE_ID, TraceIdUtils.getTransactionTraceId());
+        if (!StringUtils.isEmpty(ApplicationContextUtils.getTraceIdManager().getHeaderTraceId())){
+            template.header(TRANSACTION_TRACE_ID, ApplicationContextUtils.getTraceIdManager().getHeaderTraceId());
         }
     }
 
@@ -69,8 +59,8 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
 
     private boolean checkAllSuccess(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (handler instanceof HandlerMethod) {
-            String traceId = TraceIdUtils.getTraceId();
-            String transactionTraceId = request.getHeader(TRANSACTION_TRACE_ID);
+            String traceId = ApplicationContextUtils.getTraceIdManager().getTraceId();
+            String transactionTraceId = ApplicationContextUtils.getTraceIdManager().getRequestHeaderTraceId(request);
             if (!StringUtils.isEmpty(transactionTraceId)){
                 traceId = transactionTraceId;
             }
