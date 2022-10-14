@@ -16,7 +16,7 @@ public class TestController {
     @Resource
     private TestService testService;
 
-    @GlobalTransactional(groupName = "gateway01#projectC01",feignClientName = "StockOpenFeignClient#addStock",sort = 1)
+    @GlobalTransactional(name = "#user",groupName = "gateway01#projectC01",feignClientName = "StockOpenFeignClient#addStock",sort = 1)
     @RequestMapping(value = "test")
     public User test(@RequestBody User user){
         return testService.testMethod(user);

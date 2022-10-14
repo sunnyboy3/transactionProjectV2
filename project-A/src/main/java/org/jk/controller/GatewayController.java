@@ -15,7 +15,7 @@ public class GatewayController {
     @Resource
     private TestService testService;
 
-    @GlobalTransactional(groupName = "gateway01",feignClientName = "GatewayControllerTestClient#test",sort = 0)
+    @GlobalTransactional(name = "#user",groupName = "gateway01",feignClientName = "GatewayControllerTestClient#test",sort = 0)
     @RequestMapping(value = "test")
     public User test(@RequestBody(required = false) User user){
         return testService.testMethod(user);

@@ -1,9 +1,9 @@
 package org.jk.core;
 
+import com.google.gson.Gson;
 import org.jk.annotation.GlobalTransactional;
 import org.jk.entity.TransactionProject;
 import org.jk.entity.TransactionRequestLogs;
-import org.jk.interceptor.ChildHttpServletRequestWrapper;
 import org.jk.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -33,10 +34,23 @@ public class PostgreResourceManagerImpl implements ResourceManager {
     private static final String SAVE_PROJECT = "insert into service_public.transaction_project(project_name,transaction_group,feign_client_name) values(?,?,?)";
     private static final String QUERY_LOGS_BY_TRACEID = "select id,trace_id,project_name,in_param,out_param,group_name,status,feign_client_name,sort from service_public.transaction_request_logs where trace_id = ?";
     private static final String UPDATE_LOGS_STATUS = "update service_public.transaction_request_logs set status = ? where trace_id = ? and project_name = ? and group_name = ? and feign_client_name = ?";
+    private static final String UPDATE_LOGS_OUT_PARAM = "update service_public.transaction_request_logs set out_param = ? where trace_id = ? and project_name = ? and group_name = ? and feign_client_name = ?";
     public static final String TRANSACTION_PACKAGE = "org.jk.controller";
 
 
     private static final int INIT_LOGS_STATUS = 0;
+
+    @Override
+    public void updateLogsOutParam() {
+        TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
+        if (Objects.nonNull(logs)){
+            JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
+            int num = jdbcTemplate.update(UPDATE_LOGS_OUT_PARAM,logs.getOut_param(),logs.getTrace_id(),logs.getProject_name(),logs.getGroup_name(),logs.getFeign_client_name());
+            if (num == 0){
+                logger.error("写入输入参数失败：Trace_id:{},Project_name:{},Group_name:{},Feign_client_name:{}",logs.getTrace_id(),logs.getProject_name(),logs.getGroup_name(),logs.getFeign_client_name());
+            }
+        }
+    }
 
     @Override
     public void updateLogsStatus(TransactionRequestLogs logs) {
@@ -94,10 +108,10 @@ public class PostgreResourceManagerImpl implements ResourceManager {
     }
 
     @Override
-    public void saveLogs(GlobalTransactional transactional, HttpServletRequest request) {
+    public void saveLogs(GlobalTransactional transactional, Object inParam) {
         JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
         try {
-            Object[] args = new Object[]{ApplicationContextUtils.getTraceIdManager().getTraceId(),ApplicationContextUtils.getProjectName(),coverRequestParam(request),0,transactional.groupName(),transactional.feignClientName(),transactional.sort()};
+            Object[] args = new Object[]{ApplicationContextUtils.getTraceIdManager().getTraceId(),ApplicationContextUtils.getProjectName(),inParam,0,transactional.groupName(),transactional.feignClientName(),transactional.sort()};
 
             //存储日志信息
             TransactionRequestLogs logs = new TransactionRequestLogs();
@@ -107,19 +121,10 @@ public class PostgreResourceManagerImpl implements ResourceManager {
             logs.setStatus(INIT_LOGS_STATUS);
             logs.setTrace_id(ApplicationContextUtils.getTraceIdManager().getTraceId());
             logs.setSort(transactional.sort());
-            TransactionRequestLogsUtils.setLogs(logs);
             jdbcTemplate.update(SAVE_LOGS,args);
-        }catch (IOException e){
+            TransactionRequestLogsUtils.setLogs(logs);
+        }catch (Exception e){
             logger.error("新增数据失败");
         }
-    }
-
-    private String coverRequestParam(HttpServletRequest request) throws IOException {
-        ChildHttpServletRequestWrapper requestWrapper = new ChildHttpServletRequestWrapper(request);
-        String contentType = requestWrapper.getContentType();
-        if (MediaType.APPLICATION_JSON_VALUE.equals(contentType)){
-            return RequestUtils.request2JsonString(requestWrapper);
-        }
-        return "";
     }
 }

@@ -1,7 +1,6 @@
 package org.jk.annotation;
 
 import brave.handler.FinishedSpanHandler;
-import org.jk.interceptor.BaseFilter;
 import org.jk.interceptor.HttpAutoInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -30,20 +29,6 @@ import java.util.List;
 @EnableWebMvc
 @AutoConfigureBefore(TraceAutoConfiguration.class)
 public class GlobalTransactionalConfiguration  implements WebMvcConfigurer {
-    /**
-     * 目的注入自定义BaseFilter
-     * @return
-     */
-    @Bean
-    public FilterRegistrationBean<Filter> baseFilter(){
-        FilterRegistrationBean<Filter> filterFilterRegistrationBean = new FilterRegistrationBean<>();
-        filterFilterRegistrationBean.setFilter(new BaseFilter());
-        List<String> patters = new ArrayList<>();
-        patters.add("/*");
-        filterFilterRegistrationBean.setUrlPatterns(patters);
-        filterFilterRegistrationBean.setOrder(1);
-        return filterFilterRegistrationBean;
-    }
 
     /**
      * 目的自定义transaction-trace-id

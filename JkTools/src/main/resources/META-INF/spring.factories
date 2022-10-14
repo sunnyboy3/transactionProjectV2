@@ -2,4 +2,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.jk.annotation.GlobalTransactionalConfiguration,\
 org.jk.core.PostgreResourceManagerImpl,\
-org.jk.core.TraceIdSleuthManagerImpl
+org.jk.core.TraceIdSleuthManagerImpl,\
+org.jk.aop.TransactionAspect

@@ -91,12 +91,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                             }
                             return false;
                         }
-                    } else {
-                        //不存在数据
-                        ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
                     }
-                } else {
-                    ApplicationContextUtils.getResourceManager().saveLogs(transactional,request);
                 }
             }
         }

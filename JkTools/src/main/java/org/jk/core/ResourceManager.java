@@ -12,8 +12,8 @@ import java.util.List;
 
 public interface ResourceManager {
 
-    public void saveLogs(GlobalTransactional transactional, HttpServletRequest request);
-
+    public void saveLogs(GlobalTransactional transactional, Object inParam);
+    public void updateLogsOutParam();
     public void deleteProjectData();
     public void saveProjectData();
     public List<TransactionRequestLogs> findLogsByTraceId(String traceId);
