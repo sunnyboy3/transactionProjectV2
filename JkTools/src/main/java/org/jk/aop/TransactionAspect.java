@@ -1,10 +1,7 @@
 package org.jk.aop;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.util.JsonParserSequence;
 import com.google.gson.Gson;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.jk.annotation.GlobalTransactional;
@@ -19,7 +16,6 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -31,6 +27,8 @@ import java.util.Objects;
 @Aspect
 public class TransactionAspect {
 
+    private final static int INIT_STATUS = 0;//初始状态
+
     @Pointcut("@annotation(org.jk.annotation.GlobalTransactional)")
     public void getParamResult(){}
 
@@ -39,13 +37,42 @@ public class TransactionAspect {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         GlobalTransactional globalTransactional = methodSignature.getMethod().getAnnotation(GlobalTransactional.class);
         String spELString = globalTransactional.name();
-        //执行方法请求参数
-        Object result = generateKeyBySpEL(spELString, joinPoint);
-        if (Objects.nonNull(result)){
-            //判断是否是补偿请求
-            TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
-            if (Objects.isNull(logs)){
-                ApplicationContextUtils.getResourceManager().saveLogs(globalTransactional,new Gson().toJson(result));
+
+        //表示没有消息1、新进入请求方法  2、由于HttpAutoInterceptor拦截消息抛出异常日志没有写入
+        TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
+        if (Objects.isNull(logs)){
+            String traceId = ApplicationContextUtils.getTraceIdManager().getTraceId();
+            String transactionTraceId = logs.getTransactionTraceId();
+            if (!StringUtils.isEmpty(transactionTraceId)){
+                traceId = transactionTraceId;
+            }
+            //执行方法请求参数
+            Object result = generateKeyBySpEL(spELString, joinPoint);
+            TransactionRequestLogs logsOrg = new TransactionRequestLogs();
+            logsOrg.setTrace_id(traceId);
+            logsOrg.setProject_name(ApplicationContextUtils.getProjectName());
+            if (Objects.nonNull(result)){
+                logsOrg.setIn_param(new Gson().toJson(result));
+            }
+            logsOrg.setStatus(INIT_STATUS);
+            logsOrg.setGroup_name(globalTransactional.groupName());
+            logsOrg.setFeign_client_name(globalTransactional.feignClientName());
+            logsOrg.setSort(globalTransactional.sort());
+            ApplicationContextUtils.getResourceManager().saveLogs(logsOrg);
+        }else {
+            String transactionTraceId = logs.getTransactionTraceId();
+            if (!StringUtils.isEmpty(transactionTraceId)) {
+                //执行方法请求参数
+                Object result = generateKeyBySpEL(spELString, joinPoint);
+                logs.setProject_name(ApplicationContextUtils.getProjectName());
+                if (Objects.nonNull(result)) {
+                    logs.setIn_param(new Gson().toJson(result));
+                }
+                logs.setStatus(INIT_STATUS);
+                logs.setGroup_name(globalTransactional.groupName());
+                logs.setFeign_client_name(globalTransactional.feignClientName());
+                logs.setSort(globalTransactional.sort());
+                ApplicationContextUtils.getResourceManager().saveLogs(logs);
             }
         }
     }
