@@ -91,6 +91,12 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                             }
                             return false;
                         }
+                    } else {
+                        if (!StringUtils.isEmpty(transactionTraceId)){
+                            TransactionRequestLogs selfLogs = new TransactionRequestLogs();
+                            selfLogs.setTransactionTraceId(transactionTraceId);
+                            TransactionRequestLogsUtils.setLogs(selfLogs);
+                        }
                     }
                 }
             }

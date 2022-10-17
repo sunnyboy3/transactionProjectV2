@@ -1,6 +1,6 @@
 package org.jk.entity;
 
-public class TransactionRequestLogs {
+public class TransactionRequestLogs extends BaseLogs{
     private int id;
     private String trace_id;
     private String project_name;

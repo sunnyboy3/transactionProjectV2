@@ -42,10 +42,6 @@ public class TransactionAspect {
         TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
         if (Objects.isNull(logs)){
             String traceId = ApplicationContextUtils.getTraceIdManager().getTraceId();
-            String transactionTraceId = logs.getTransactionTraceId();
-            if (!StringUtils.isEmpty(transactionTraceId)){
-                traceId = transactionTraceId;
-            }
             //执行方法请求参数
             Object result = generateKeyBySpEL(spELString, joinPoint);
             TransactionRequestLogs logsOrg = new TransactionRequestLogs();
@@ -62,17 +58,19 @@ public class TransactionAspect {
         }else {
             String transactionTraceId = logs.getTransactionTraceId();
             if (!StringUtils.isEmpty(transactionTraceId)) {
+                TransactionRequestLogs requestLogs = new TransactionRequestLogs();
                 //执行方法请求参数
                 Object result = generateKeyBySpEL(spELString, joinPoint);
-                logs.setProject_name(ApplicationContextUtils.getProjectName());
+                requestLogs.setTrace_id(transactionTraceId);
+                requestLogs.setProject_name(ApplicationContextUtils.getProjectName());
                 if (Objects.nonNull(result)) {
-                    logs.setIn_param(new Gson().toJson(result));
+                    requestLogs.setIn_param(new Gson().toJson(result));
                 }
-                logs.setStatus(INIT_STATUS);
-                logs.setGroup_name(globalTransactional.groupName());
-                logs.setFeign_client_name(globalTransactional.feignClientName());
-                logs.setSort(globalTransactional.sort());
-                ApplicationContextUtils.getResourceManager().saveLogs(logs);
+                requestLogs.setStatus(INIT_STATUS);
+                requestLogs.setGroup_name(globalTransactional.groupName());
+                requestLogs.setFeign_client_name(globalTransactional.feignClientName());
+                requestLogs.setSort(globalTransactional.sort());
+                ApplicationContextUtils.getResourceManager().saveLogs(requestLogs);
             }
         }
     }
