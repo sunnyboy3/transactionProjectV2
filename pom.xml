@@ -17,6 +17,7 @@
         <module>JkTools</module>
         <module>common</module>
         <module>project-C</module>
+        <module>project-D</module>
     </modules>
 
 

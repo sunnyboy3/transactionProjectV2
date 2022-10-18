@@ -15,4 +15,7 @@ public interface StockOpenFeignClient{
 
     @RequestMapping(value = "/projectC/test",method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
     User addStock(@RequestBody Object obj);
+
+    @RequestMapping(value = "/projectC/test2",method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
+    User test2(@RequestBody Object obj);
 }

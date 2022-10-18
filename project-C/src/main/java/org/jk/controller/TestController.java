@@ -21,4 +21,17 @@ public class TestController {
     public User test(@RequestBody User user){
         return testService.testMethod(user);
     }
+
+    /**
+     * name 入参对象名称
+     * groupName 组名称 被调用 gateway01#projectC02 必须与gateway01组处在同一组里
+     * feignClientName 请求客户端与方法组合
+     * @param user
+     * @return
+     */
+    @GlobalTransactional(name = "#user",groupName = "gateway01#projectC02",feignClientName = "StockOpenFeignClient#test2",sort = 2)
+    @RequestMapping(value = "test2")
+    public User test2(@RequestBody User user){
+        return testService.testMethod(user);
+    }
 }

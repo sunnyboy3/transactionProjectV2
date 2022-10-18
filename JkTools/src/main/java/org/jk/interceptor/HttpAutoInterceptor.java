@@ -15,6 +15,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -38,8 +40,12 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
 
     @Override
     public void apply(RequestTemplate template) {
-        if (!StringUtils.isEmpty(ApplicationContextUtils.getTraceIdManager().getHeaderTraceId())){
-            template.header(TRANSACTION_TRACE_ID, ApplicationContextUtils.getTraceIdManager().getHeaderTraceId());
+        ServletRequestAttributes attributes = (ServletRequestAttributes)RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        String headerTraceID = request.getHeader(TRANSACTION_TRACE_ID);
+        logger.info("设置请求消息头：{}",headerTraceID);
+        if (!StringUtils.isEmpty(headerTraceID)){
+            template.header(TRANSACTION_TRACE_ID, headerTraceID);
         }
     }
 
@@ -104,7 +110,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
         return true;
     }
 
-    private boolean isNextNode(String localGroup,String group){
+    private static boolean isNextNode(String localGroup,String group){
         if (localGroup.equals(group)){
             return false;
         }
