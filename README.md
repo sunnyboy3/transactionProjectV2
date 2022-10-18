@@ -40,10 +40,10 @@
     );
 
 测试用例 
+    ![流程图02](https://user-images.githubusercontent.com/13884959/196380236-31d592c3-6a71-4cde-bccc-162f81d683a9.png)
 
     案例1：
-    访问![流程图02](https://user-images.githubusercontent.com/13884959/196380236-31d592c3-6a71-4cde-bccc-162f81d683a9.png)
-    projectD应用失败
+    访问projectD应用失败
     
     http://localhost:9003/gateway/test
     Content-Type:application/json
