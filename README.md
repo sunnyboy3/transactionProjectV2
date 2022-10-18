@@ -38,4 +38,20 @@
         username varchar not null,
         age      integer not null
     );
+
+测试用例 
+    案例1：访问projectD应用失败
     
+    http://localhost:9003/gateway/test
+    Content-Type:application/json
+    {
+        "username":"wangwu",
+        "age":10,
+        "flag":3
+    }
+
+    补偿事务
+    http://localhost:9003/gateway/test
+    Content-Type:application/json
+    transaction-trace-id:xxxx     #注意这里使用表中trance_id
+    {"username":"wangwu","age":10,"flag":0}
