@@ -5,9 +5,9 @@ spring:
     name: project-C
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://172.10.61.171:5432/edu-admin
+    url: jdbc:postgresql://xxx:5432/edu-admin
     username: dev
-    password: mko0PL<.;?
+    password: xxx
   cloud:
     nacos:
       discovery:
