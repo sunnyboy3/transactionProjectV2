@@ -50,6 +50,8 @@ public class TransactionAspect {
             if (Objects.nonNull(result)){
                 logsOrg.setIn_param(new Gson().toJson(result));
             }
+            logsOrg.setParent_node(ApplicationContextUtils.getTraceIdManager().getParentSpanId());
+            logsOrg.setLocal_node(ApplicationContextUtils.getTraceIdManager().getLocalSpanId());
             logsOrg.setStatus(INIT_STATUS);
             logsOrg.setGroup_name(globalTransactional.groupName());
             logsOrg.setFeign_client_name(globalTransactional.feignClientName());
@@ -66,6 +68,8 @@ public class TransactionAspect {
                 if (Objects.nonNull(result)) {
                     requestLogs.setIn_param(new Gson().toJson(result));
                 }
+                requestLogs.setLocal_node(ApplicationContextUtils.getTraceIdManager().getLocalSpanId());
+                requestLogs.setParent_node(logs.getParent_node());
                 requestLogs.setStatus(INIT_STATUS);
                 requestLogs.setGroup_name(globalTransactional.groupName());
                 requestLogs.setFeign_client_name(globalTransactional.feignClientName());

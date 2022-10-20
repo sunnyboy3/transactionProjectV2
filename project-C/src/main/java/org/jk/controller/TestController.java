@@ -16,7 +16,7 @@ public class TestController {
     @Resource
     private TestService testService;
 
-    @GlobalTransactional(name = "#user",groupName = "gateway01#projectC01",feignClientName = "StockOpenFeignClient#addStock",sort = 1)
+    @GlobalTransactional(name = "#user",feignClientName = "StockOpenFeignClient#addStock",sort = 1)
     @RequestMapping(value = "test")
     public User test(@RequestBody User user){
         return testService.testMethod(user);
@@ -29,7 +29,7 @@ public class TestController {
      * @param user
      * @return
      */
-    @GlobalTransactional(name = "#user",groupName = "gateway01#projectC02",feignClientName = "StockOpenFeignClient#test2",sort = 2)
+    @GlobalTransactional(name = "#user",feignClientName = "StockOpenFeignClient#test2",sort = 2)
     @RequestMapping(value = "test2")
     public User test2(@RequestBody User user){
         return testService.testMethod(user);

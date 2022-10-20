@@ -23,6 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -43,9 +44,13 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
         ServletRequestAttributes attributes = (ServletRequestAttributes)RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
         String headerTraceID = request.getHeader(TRANSACTION_TRACE_ID);
-        logger.info("设置请求消息头：{}",headerTraceID);
+        logger.info("设置请求消息头路由ID：{}",headerTraceID);
         if (!StringUtils.isEmpty(headerTraceID)){
             template.header(TRANSACTION_TRACE_ID, headerTraceID);
+        }
+        if (Objects.nonNull(TransactionRequestLogsUtils.getLogs())){
+            logger.info("设置请求消息头该请求spanID：{}",TransactionRequestLogsUtils.getLogs().getLocal_node());
+            template.header(PARENT_NODE_ID, TransactionRequestLogsUtils.getLogs().getLocal_node());
         }
     }
 
@@ -68,6 +73,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
             String traceId = ApplicationContextUtils.getTraceIdManager().getTraceId();
             String transactionTraceId = ApplicationContextUtils.getTraceIdManager().getRequestHeaderTraceId(request);
             if (!StringUtils.isEmpty(transactionTraceId)){
+                //表示补偿事务
                 traceId = transactionTraceId;
             }
             HandlerMethod handlerMethod = (HandlerMethod) handler;
@@ -76,13 +82,13 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                 List<TransactionRequestLogs> transactionRequestLogs = ApplicationContextUtils.getResourceManager().findLogsByTraceId(traceId);
                 if (!CollectionUtils.isEmpty(transactionRequestLogs)) {
                     //表示非第一次请求
-                    List<TransactionRequestLogs> selfRequestLogs = transactionRequestLogs.stream().sorted(Comparator.comparing(TransactionRequestLogs::getSort)).filter(k ->ApplicationContextUtils.getProjectName().equals(k.getProject_name()) && transactional.groupName().equals(k.getGroup_name()) && transactional.sort() == k.getSort()).collect(Collectors.toList());
+                    List<TransactionRequestLogs> selfRequestLogs = transactionRequestLogs.stream().sorted(Comparator.comparing(TransactionRequestLogs::getSort)).filter(k ->ApplicationContextUtils.getProjectName().equals(k.getProject_name()) && transactional.sort() == k.getSort()).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(selfRequestLogs)) {
                         //已经存在
                         TransactionRequestLogs selfLogs = selfRequestLogs.get(0);
                         TransactionRequestLogsUtils.setLogs(selfLogs);
                         if (SUCCESS_STATUS.equals(selfLogs.getStatus())) {
-                            List<TransactionRequestLogs> childRequestLogs = transactionRequestLogs.stream().filter(k -> isNextNode(selfLogs.getGroup_name(),k.getGroup_name())).collect(Collectors.toList());
+                            List<TransactionRequestLogs> childRequestLogs = transactionRequestLogs.stream().filter(k ->Objects.nonNull(selfLogs.getLocal_node()) && selfLogs.getLocal_node().equals(k.getParent_node())).collect(Collectors.toList());
                             if (!CollectionUtils.isEmpty(childRequestLogs)){
                                 List<TransactionRequestLogs> childSortLogs = childRequestLogs.stream().sorted(Comparator.comparing(TransactionRequestLogs::getSort)).collect(Collectors.toList());
                                 for (TransactionRequestLogs logs:childSortLogs) {
@@ -93,7 +99,10 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                                 //将输出参数输出以供后面调用
                                 response.setStatus(200);
                                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                                response.getWriter().write(selfLogs.getOut_param());
+                                PrintWriter writer = response.getWriter();
+                                writer.write(selfLogs.getOut_param());
+                                writer.flush();
+                                writer.close();
                             }
                             return false;
                         }
@@ -101,6 +110,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                         if (!StringUtils.isEmpty(transactionTraceId)){
                             TransactionRequestLogs selfLogs = new TransactionRequestLogs();
                             selfLogs.setTransactionTraceId(transactionTraceId);
+                            selfLogs.setParent_node(ApplicationContextUtils.getTraceIdManager().getParentNode(request));
                             TransactionRequestLogsUtils.setLogs(selfLogs);
                         }
                     }
@@ -108,21 +118,6 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
             }
         }
         return true;
-    }
-
-    private static boolean isNextNode(String localGroup,String group){
-        if (localGroup.equals(group)){
-            return false;
-        }
-        if (localGroup.length() > group.length()){
-            return false;
-        }
-        localGroup = localGroup + "#";
-        String[] arr = group.split(localGroup);
-        if (arr.length <=0){
-            logger.error("规则不匹配请检查：本工程组名->{},匹配工程组名->{}",localGroup,group);
-        }
-        return !Arrays.stream(arr).filter(k -> !StringUtils.isEmpty(k)).findFirst().get().contains("#");
     }
 
     private void feignClientInvoke(TransactionRequestLogs logs) throws InvocationTargetException, IllegalAccessException {

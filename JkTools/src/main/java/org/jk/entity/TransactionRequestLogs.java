@@ -10,6 +10,8 @@ public class TransactionRequestLogs extends BaseLogs{
     private String group_name;
     private String feign_client_name;
     private int sort;
+    private String parent_node;
+    private String local_node;
 
     @Override
     public String toString() {
@@ -23,6 +25,22 @@ public class TransactionRequestLogs extends BaseLogs{
                 ", group_name='" + group_name + '\'' +
                 ", feign_client_name='" + feign_client_name + '\'' +
                 '}';
+    }
+
+    public String getParent_node() {
+        return parent_node;
+    }
+
+    public void setParent_node(String parent_node) {
+        this.parent_node = parent_node;
+    }
+
+    public String getLocal_node() {
+        return local_node;
+    }
+
+    public void setLocal_node(String local_node) {
+        this.local_node = local_node;
     }
 
     public int getSort() {
