@@ -8,4 +8,10 @@ public interface TraceIdManager {
     public String getHeaderTraceId();
 
     public String getRequestHeaderTraceId(HttpServletRequest request);
+
+    public String getParentNode(HttpServletRequest request);
+
+    public String getLocalSpanId();
+
+    public String getParentSpanId();
 }

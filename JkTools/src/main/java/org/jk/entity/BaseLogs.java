@@ -2,7 +2,7 @@ package org.jk.entity;
 
 /**
  * @ClassName BaseLogs
- * @Description TODO
+ * @Description 日志基础设置
  * @Author wp
  * @Date 2022/10/14 15:54
  **/

@@ -23,7 +23,7 @@ public class TestController {
     @Resource
     private OrderService orderService;
 
-    @GlobalTransactional(name = "#order",groupName = "gateway01#projectC01#projectD01",feignClientName = "OrderFeignClient#order",sort = 3)
+    @GlobalTransactional(name = "#order",feignClientName = "OrderFeignClient#order",sort = 3)
     @RequestMapping(value = "order")
     public Order order(@RequestBody Order order){
         return orderService.order(order);

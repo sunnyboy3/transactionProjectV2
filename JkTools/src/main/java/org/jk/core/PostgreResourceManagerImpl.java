@@ -30,10 +30,10 @@ public class PostgreResourceManagerImpl implements ResourceManager {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgreResourceManagerImpl.class);
 
-    private static final String SAVE_LOGS = "insert into service_public.transaction_request_logs(trace_id,project_name,in_param,status,group_name,feign_client_name,sort) values(?,?,?,?,?,?,?)";
+    private static final String SAVE_LOGS = "insert into service_public.transaction_request_logs(trace_id,project_name,in_param,status,group_name,feign_client_name,sort,parent_node,local_node) values(?,?,?,?,?,?,?,?,?)";
     private static final String DELETE_PROJECT = "delete from service_public.transaction_project where project_name = ? and transaction_group = ? and feign_client_name = ?";
     private static final String SAVE_PROJECT = "insert into service_public.transaction_project(project_name,transaction_group,feign_client_name) values(?,?,?)";
-    private static final String QUERY_LOGS_BY_TRACEID = "select id,trace_id,project_name,in_param,out_param,group_name,status,feign_client_name,sort from service_public.transaction_request_logs where trace_id = ?";
+    private static final String QUERY_LOGS_BY_TRACEID = "select id,trace_id,project_name,in_param,out_param,group_name,status,feign_client_name,sort,parent_node,local_node from service_public.transaction_request_logs where trace_id = ?";
     private static final String UPDATE_LOGS_STATUS = "update service_public.transaction_request_logs set status = ? where trace_id = ? and project_name = ? and group_name = ? and feign_client_name = ?";
     private static final String UPDATE_LOGS_OUT_PARAM = "update service_public.transaction_request_logs set out_param = ? where trace_id = ? and project_name = ? and group_name = ? and feign_client_name = ?";
     private static final String FIND_LOGS_BY_GROUP_SQL = "select id,project_name,transaction_group,feign_client_name from service_public.transaction_project where project_name = ? and transaction_group like = CONCAT(?,'%')";
@@ -150,7 +150,7 @@ public class PostgreResourceManagerImpl implements ResourceManager {
     public void saveLogs(TransactionRequestLogs logsOrg) {
         try {
             JdbcTemplate jdbcTemplate = ApplicationContextUtils.getApplicationContext().getBean(JdbcTemplate.class);
-            Object[] args = new Object[]{logsOrg.getTrace_id(),logsOrg.getProject_name(),logsOrg.getIn_param(),logsOrg.getStatus(),logsOrg.getGroup_name(),logsOrg.getFeign_client_name(),logsOrg.getSort()};
+            Object[] args = new Object[]{logsOrg.getTrace_id(),logsOrg.getProject_name(),logsOrg.getIn_param(),logsOrg.getStatus(),logsOrg.getGroup_name(),logsOrg.getFeign_client_name(),logsOrg.getSort(),logsOrg.getParent_node(),logsOrg.getLocal_node()};
             jdbcTemplate.update(SAVE_LOGS,args);
             TransactionRequestLogsUtils.setLogs(logsOrg);
         }catch (Exception e){

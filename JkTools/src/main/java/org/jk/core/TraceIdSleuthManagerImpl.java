@@ -22,10 +22,37 @@ public class TraceIdSleuthManagerImpl implements TraceIdManager{
     private static final Logger logger = LoggerFactory.getLogger(TraceIdSleuthManagerImpl.class);
 
     public static final String TRANSACTION_TRACE_ID = "transaction-trace-id";
+    public static final String PARENT_NODE_ID = "parent-node";
+    /**
+     * 获取本服务的spanId
+     * @return
+     */
+    @Override
+    public String getLocalSpanId() {
+        Tracing tracing = ApplicationContextUtils.getApplicationContext().getBean(Tracing.class);
+        TraceContext context = tracing.tracer().currentSpan().context();
+        return context.spanIdString();
+    }
+
+    /**
+     * 获取调用本方法的 父级 spanId
+     * @return
+     */
+    @Override
+    public String getParentSpanId() {
+        Tracing tracing = ApplicationContextUtils.getApplicationContext().getBean(Tracing.class);
+        TraceContext context = tracing.tracer().currentSpan().context();
+        return context.parentIdString();
+    }
 
     @Override
     public String getRequestHeaderTraceId(HttpServletRequest request) {
         return request.getHeader(TRANSACTION_TRACE_ID);
+    }
+
+    @Override
+    public String getParentNode(HttpServletRequest request) {
+        return request.getHeader(PARENT_NODE_ID);
     }
 
     /**

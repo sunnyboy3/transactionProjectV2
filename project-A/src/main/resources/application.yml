@@ -17,8 +17,10 @@ spring:
       tag:
         whitelisted-keys:
           - transaction-trace-id
+          - parent-node
     propagation-keys:
       - transaction-trace-id
+      - parent-node
 #打开全部监控端点
 maagement:
   endpoints:
