@@ -35,7 +35,11 @@ public class TransactionAspect {
     @Before("getParamResult()")
     public void inParamResult(JoinPoint joinPoint) throws Throwable {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        //如果没有注解则不进行拦截
         GlobalTransactional globalTransactional = methodSignature.getMethod().getAnnotation(GlobalTransactional.class);
+        if (Objects.isNull(globalTransactional)){
+            return;
+        }
         String spELString = globalTransactional.name();
 
         //表示没有消息1、新进入请求方法  2、由于HttpAutoInterceptor拦截消息抛出异常日志没有写入
@@ -81,6 +85,12 @@ public class TransactionAspect {
 
     @AfterReturning(value = "getParamResult()",returning = "obj")
     private void outParamResult(JoinPoint joinPoint, Object obj){
+        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        //如果没有注解则不进行拦截
+        GlobalTransactional globalTransactional = methodSignature.getMethod().getAnnotation(GlobalTransactional.class);
+        if (Objects.isNull(globalTransactional)){
+            return;
+        }
         if (Objects.nonNull(obj)) {
             TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
             logs.setOut_param(new Gson().toJson(obj));
