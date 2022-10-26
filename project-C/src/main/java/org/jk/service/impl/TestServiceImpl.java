@@ -20,6 +20,13 @@ public class TestServiceImpl implements TestService {
 
     @Transactional
     @Override
+    public void test3(String username, String password) {
+        System.out.println("GET请求方式");
+        System.out.println("用户名："+username);
+    }
+
+    @Transactional
+    @Override
     public User testMethod(User user) {
         System.out.println(user.getUsername());
         System.out.println("===进入逻辑处理区===");

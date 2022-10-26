@@ -8,13 +8,21 @@ import org.jk.annotation.GlobalTransactional;
 import org.jk.entity.TransactionRequestLogs;
 import org.jk.utils.ApplicationContextUtils;
 import org.jk.utils.TransactionRequestLogsUtils;
+import org.jk.utils.UrlParamUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
@@ -26,6 +34,8 @@ import java.util.Objects;
  **/
 @Aspect
 public class TransactionAspect {
+
+    private static final Logger logger = LoggerFactory.getLogger(TransactionAspect.class);
 
     private final static int INIT_STATUS = 0;//初始状态
 
@@ -41,19 +51,16 @@ public class TransactionAspect {
             return;
         }
         String spELString = globalTransactional.name();
-
         //表示没有消息1、新进入请求方法  2、由于HttpAutoInterceptor拦截消息抛出异常日志没有写入
         TransactionRequestLogs logs = TransactionRequestLogsUtils.getLogs();
+
         if (Objects.isNull(logs)){
             String traceId = ApplicationContextUtils.getTraceIdManager().getTraceId();
             //执行方法请求参数
-            Object result = generateKeyBySpEL(spELString, joinPoint);
             TransactionRequestLogs logsOrg = new TransactionRequestLogs();
             logsOrg.setTrace_id(traceId);
             logsOrg.setProject_name(ApplicationContextUtils.getProjectName());
-            if (Objects.nonNull(result)){
-                logsOrg.setIn_param(new Gson().toJson(result));
-            }
+            setInParam(logsOrg,joinPoint,spELString);
             logsOrg.setParent_node(ApplicationContextUtils.getTraceIdManager().getParentSpanId());
             logsOrg.setLocal_node(ApplicationContextUtils.getTraceIdManager().getLocalSpanId());
             logsOrg.setStatus(INIT_STATUS);
@@ -65,13 +72,9 @@ public class TransactionAspect {
             String transactionTraceId = logs.getTransactionTraceId();
             if (!StringUtils.isEmpty(transactionTraceId)) {
                 TransactionRequestLogs requestLogs = new TransactionRequestLogs();
-                //执行方法请求参数
-                Object result = generateKeyBySpEL(spELString, joinPoint);
                 requestLogs.setTrace_id(transactionTraceId);
                 requestLogs.setProject_name(ApplicationContextUtils.getProjectName());
-                if (Objects.nonNull(result)) {
-                    requestLogs.setIn_param(new Gson().toJson(result));
-                }
+                setInParam(requestLogs,joinPoint,spELString);
                 requestLogs.setLocal_node(ApplicationContextUtils.getTraceIdManager().getLocalSpanId());
                 requestLogs.setParent_node(logs.getParent_node());
                 requestLogs.setStatus(INIT_STATUS);
@@ -85,6 +88,9 @@ public class TransactionAspect {
 
     @AfterReturning(value = "getParamResult()",returning = "obj")
     private void outParamResult(JoinPoint joinPoint, Object obj){
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletResponse response = requestAttributes.getResponse();
+        logger.info("返回类型：{}",response.getContentType());
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         //如果没有注解则不进行拦截
         GlobalTransactional globalTransactional = methodSignature.getMethod().getAnnotation(GlobalTransactional.class);
@@ -96,6 +102,23 @@ public class TransactionAspect {
             logs.setOut_param(new Gson().toJson(obj));
             ApplicationContextUtils.getResourceManager().updateLogsOutParam();
         }
+
+    }
+
+    private void setInParam(TransactionRequestLogs requestLogs,JoinPoint joinPoint,String spELString) throws Throwable{
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = requestAttributes.getRequest();
+        String contentType = request.getContentType();
+        logger.info("请求类型：{}",contentType);
+        Object result = generateKeyBySpEL(spELString, joinPoint);
+        if (Objects.nonNull(result)){
+            if (MediaType.APPLICATION_JSON_VALUE.equals(contentType)){
+                requestLogs.setIn_param(new Gson().toJson(result));
+            } else {
+                requestLogs.setIn_param(UrlParamUtils.asUrlParams(request.getParameterMap()));
+            }
+        }
+
     }
 
     private Object generateKeyBySpEL(String spELString,JoinPoint joinPoint) throws Throwable {

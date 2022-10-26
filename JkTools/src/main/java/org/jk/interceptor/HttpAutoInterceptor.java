@@ -15,6 +15,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.HandlerMethod;
@@ -24,12 +26,11 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.lang.reflect.Parameter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -76,6 +77,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                 //表示补偿事务
                 traceId = transactionTraceId;
             }
+
             HandlerMethod handlerMethod = (HandlerMethod) handler;
             GlobalTransactional transactional = handlerMethod.getMethodAnnotation(GlobalTransactional.class);
             if (Objects.nonNull(transactional)) {
@@ -120,7 +122,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
         return true;
     }
 
-    private void feignClientInvoke(TransactionRequestLogs logs) throws InvocationTargetException, IllegalAccessException {
+    private void feignClientInvoke(TransactionRequestLogs logs) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         //成功 需要将该工程的  addStock
         String[] clientMethod = logs.getFeign_client_name().split("#");
         Object bean = ApplicationContextUtils.getApplicationContext().getBean(CLIENT_PREFIX + clientMethod[0]);
