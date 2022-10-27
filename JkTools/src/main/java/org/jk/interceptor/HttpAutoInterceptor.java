@@ -1,6 +1,9 @@
 package org.jk.interceptor;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.jk.annotation.GlobalTransactional;
@@ -15,6 +18,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.HandlerMethod;
@@ -24,13 +29,14 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.lang.reflect.Parameter;
+import java.net.URLDecoder;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 主要业务逻辑在拦截器中，后续会逐步重构代码
@@ -76,6 +82,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                 //表示补偿事务
                 traceId = transactionTraceId;
             }
+
             HandlerMethod handlerMethod = (HandlerMethod) handler;
             GlobalTransactional transactional = handlerMethod.getMethodAnnotation(GlobalTransactional.class);
             if (Objects.nonNull(transactional)) {
@@ -92,7 +99,7 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
                             if (!CollectionUtils.isEmpty(childRequestLogs)){
                                 List<TransactionRequestLogs> childSortLogs = childRequestLogs.stream().sorted(Comparator.comparing(TransactionRequestLogs::getSort)).collect(Collectors.toList());
                                 for (TransactionRequestLogs logs:childSortLogs) {
-                                    feignClientInvoke(logs);
+                                    feignClientInvoke(logs,transactional);
                                 }
                             }
                             if (!StringUtils.isEmpty(selfLogs.getOut_param()) && 1 == selfLogs.getStatus()){
@@ -120,24 +127,72 @@ public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInt
         return true;
     }
 
-    private void feignClientInvoke(TransactionRequestLogs logs) throws InvocationTargetException, IllegalAccessException {
+    private void feignClientInvoke(TransactionRequestLogs logs,GlobalTransactional transactional) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException {
         //成功 需要将该工程的  addStock
         String[] clientMethod = logs.getFeign_client_name().split("#");
         Object bean = ApplicationContextUtils.getApplicationContext().getBean(CLIENT_PREFIX + clientMethod[0]);
-        Method[] methods = bean.getClass().getDeclaredMethods();
-        for (Method method :
-                methods) {
+        Method[] orgMethods = ClassLoader.getSystemClassLoader().loadClass(CLIENT_PREFIX + clientMethod[0]).getMethods();
+
+        for (Method method: orgMethods) {
             if (clientMethod[1].equals(method.getName())) {
-                String in_param = logs.getIn_param();
-                if (StringUtils.isEmpty(in_param)) {
-                    method.invoke(bean);
-                }else {
-                    Gson gson = new Gson();
-                    method.invoke(bean,gson.fromJson(in_param,Object.class));
+
+                Map<String,Object> resultMap = new LinkedHashMap<>();
+
+                int parameterCount = method.getParameterCount();
+                Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+                for (int i = 0; i < parameterCount; i++){
+                    Annotation[] annotations = parameterAnnotations[i];
+                    Method invokeMethod = getInvokeMethod(bean, clientMethod);
+                    if (Objects.isNull(invokeMethod)){
+                        return;
+                    }
+                    for (int j = 0; j < annotations.length; j++) {
+                        if (annotations[j] instanceof RequestParam){
+                            String value = ((RequestParam) annotations[j]).value();
+                            String in_param = logs.getIn_param();
+                            resultMap.put(value,invokeMethod.getParameterTypes()[i].cast(getValue(in_param, value)));
+                            if ((i + 1) == parameterCount){
+                                Object[] args = resultMap.values().stream().toArray();
+                                invokeMethod.invoke(bean,args);
+                                return;
+                            }
+                        } else if (annotations[j] instanceof RequestBody){
+                            String in_param = logs.getIn_param();
+                            if (StringUtils.isEmpty(in_param)) {
+                                invokeMethod.invoke(bean);
+                            } else {
+                                //将类型反射出来
+                                Class<?> aClass = ClassLoader.getSystemClassLoader().loadClass(invokeMethod.getParameterTypes()[i].getTypeName());
+                                Object param = GsonAdapterUtils.getGson().fromJson(in_param,aClass);
+                                invokeMethod.invoke(bean,param);
+                            }
+                            return;
+                        }
+                    }
                 }
             }
         }
     }
+
+    private Object getValue(String in_param,String filed){
+        Map<String, Object> resultMap = new HashMap<>();
+        Map<String,Object> map = GsonAdapterUtils.getGson().fromJson(in_param, resultMap.getClass());
+        return map.get(filed);
+    }
+
+    private Method getInvokeMethod(Object bean,String[] clientMethod){
+        Method[] orgMethods = bean.getClass().getDeclaredMethods();
+        if (Objects.isNull(orgMethods) || orgMethods.length <= 0){
+            return null;
+        }
+        for (Method method : orgMethods) {
+            if (clientMethod[1].equals(method.getName())) {
+                return method;
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

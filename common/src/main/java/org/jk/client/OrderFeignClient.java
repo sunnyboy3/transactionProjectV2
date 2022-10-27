@@ -17,5 +17,5 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @FeignClient(name = "project-D")
 public interface OrderFeignClient {
     @RequestMapping(value = "/projectD/order",method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
-    Order order(@RequestBody Object obj);
+    Order order(@RequestBody Object order);
 }

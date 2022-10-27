@@ -31,4 +31,9 @@ public class TestServiceImpl extends ParentServiceImpl implements TestService {
         }
         return Optional.ofNullable(stockOpenFeignService.test2(user1)).orElseThrow(() -> new RuntimeException("失败"));
     }
+    @Transactional
+    @Override
+    public void test3(String username, String password) {
+        stockOpenFeignService.test3(username,password,10.3d);
+    }
 }

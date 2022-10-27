@@ -10,4 +10,7 @@ public interface GatewayControllerTestClient {
     @RequestMapping("/gateway/test")
     @Headers({"Content-Type: application/json","Accept: application/json"})
     String test(@RequestBody Object obj);
+    @RequestMapping("/gateway/testParamMethod")
+    @Headers({"Content-Type: application/json","Accept: application/json"})
+    String testParamMethod(@RequestBody Object obj);
 }

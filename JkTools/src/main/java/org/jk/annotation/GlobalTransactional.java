@@ -17,11 +17,6 @@ package org.jk.annotation;
 
 import java.lang.annotation.*;
 
-/**
- * The interface Global transactional.
- *
- * @author slievrly
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD,ElementType.TYPE})
 @Inherited
@@ -41,4 +36,5 @@ public @interface GlobalTransactional {
     String groupName() default "";
     String feignClientName() default "";
     int sort() default 0;
+    GlobalParam[] params();
 }
