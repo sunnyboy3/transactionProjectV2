@@ -34,6 +34,6 @@ public class TestServiceImpl extends ParentServiceImpl implements TestService {
     @Transactional
     @Override
     public void test3(String username, String password) {
-        stockOpenFeignService.test3(username,password);
+        stockOpenFeignService.test3(username,password,10.3d);
     }
 }

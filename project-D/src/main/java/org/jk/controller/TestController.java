@@ -1,5 +1,6 @@
 package org.jk.controller;
 
+import org.jk.annotation.GlobalParam;
 import org.jk.annotation.GlobalTransactional;
 import org.jk.entity.Order;
 import org.jk.entity.User;
@@ -23,7 +24,9 @@ public class TestController {
     @Resource
     private OrderService orderService;
 
-    @GlobalTransactional(name = "#order",feignClientName = "OrderFeignClient#order",sort = 3)
+    @GlobalTransactional(feignClientName = "OrderFeignClient#order",sort = 3,params = {
+            @GlobalParam(name = "order")
+    })
     @RequestMapping(value = "order")
     public Order order(@RequestBody Order order){
         return orderService.order(order);

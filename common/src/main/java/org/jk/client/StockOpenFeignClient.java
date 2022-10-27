@@ -1,11 +1,8 @@
 package org.jk.client;
 
-import feign.Headers;
 import org.jk.entity.User;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,5 +18,5 @@ public interface StockOpenFeignClient{
     User test2(@RequestBody Object obj);
 
     @RequestMapping(value = "/projectC/test3",method = RequestMethod.GET)
-    void test3(@RequestParam(value = "username")String username,@RequestParam(value = "password")String password);
+    void test3(@RequestParam(value = "username")String username,@RequestParam(value = "password")String password,@RequestParam(value = "age") Double age);
 }

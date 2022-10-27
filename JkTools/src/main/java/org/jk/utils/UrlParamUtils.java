@@ -1,11 +1,13 @@
 package org.jk.utils;
 
 import com.sun.javafx.fxml.builder.URLBuilder;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,9 +18,10 @@ import java.util.Objects;
  * @Date 2022/10/25 15:44
  **/
 public class UrlParamUtils {
-    public static String asUrlParams(Map<String, String[]> source){
+    public static Map<String,Object> asUrlParams(Map<String, String[]> source){
         Iterator<String> it = source.keySet().iterator();
-        StringBuilder paramStr = new StringBuilder();
+//        StringBuilder paramStr = new StringBuilder();
+        Map<String,Object> result = new LinkedHashMap<>();
         while (it.hasNext()){
             String key = it.next();
             String[] value = source.get(key);
@@ -31,12 +34,10 @@ public class UrlParamUtils {
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
-            paramStr.append("&").append(key).append("=").append(valueEncoder);
+            result.put(key,valueEncoder);
+//            paramStr.append("&").append(key).append("=").append(valueEncoder);
         }
-        if (StringUtils.isEmpty(paramStr.toString())){
-            return paramStr.toString();
-        }
-        return paramStr.substring(1);
+        return result;
     }
 
 }

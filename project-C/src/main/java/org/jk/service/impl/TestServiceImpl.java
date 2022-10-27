@@ -20,9 +20,11 @@ public class TestServiceImpl implements TestService {
 
     @Transactional
     @Override
-    public void test3(String username, String password) {
+    public void test3(String username, String password,Double age) {
         System.out.println("GET请求方式");
         System.out.println("用户名："+username);
+        System.out.println("密码："+password);
+        System.out.println("年龄："+age);
     }
 
     @Transactional
