@@ -15,6 +15,14 @@ public class TestController {
     @Resource
     private TestService testService;
 
+    @GetMapping(value = "testThreads")
+    public Integer testThread(@RequestParam(value = "num") Integer num) throws InterruptedException {
+        if (num == 8) {
+            Thread.sleep(5* 1000);
+        };
+        return num;
+    }
+
     @GlobalTransactional(feignClientName = "StockOpenFeignClient#addStock",sort = 1,params = {
             @GlobalParam(name = "user")
     })

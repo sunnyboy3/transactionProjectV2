@@ -7,6 +7,7 @@ import org.jk.service.TestService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping(value = "gateway")
@@ -30,4 +31,9 @@ public class GatewayController {
     public void testParamMethod(@RequestParam(value = "username") String username,@RequestParam(value = "password") String password){
         testService.test3(username,password);
     }
+    @GetMapping(value = "testCompletableFuture")
+    public void testCompletableFuture() throws ExecutionException, InterruptedException {
+        testService.testCompletableFuture();
+    }
+
 }

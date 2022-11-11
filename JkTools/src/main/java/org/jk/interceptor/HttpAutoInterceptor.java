@@ -44,16 +44,18 @@ import java.util.stream.Stream;
 public class HttpAutoInterceptor extends GlobalTransaction implements HandlerInterceptor, ApplicationContextAware, RequestInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpAutoInterceptor.class);
-
+    /**
+     * 分布式补偿无法解决多线程访问的问题  需要在主线程中获取RequestAttributes  从新设置进
+     * 不推荐多线程操作对端设置事务
+     */
     @Override
     public void apply(RequestTemplate template) {
         ServletRequestAttributes attributes = (ServletRequestAttributes)RequestContextHolder.getRequestAttributes();
+        if (Objects.isNull(attributes)) return;
         HttpServletRequest request = attributes.getRequest();
         String headerTraceID = request.getHeader(TRANSACTION_TRACE_ID);
         logger.info("设置请求消息头路由ID：{}",headerTraceID);
-        if (!StringUtils.isEmpty(headerTraceID)){
-            template.header(TRANSACTION_TRACE_ID, headerTraceID);
-        }
+        if (!StringUtils.isEmpty(headerTraceID))template.header(TRANSACTION_TRACE_ID, headerTraceID);
         if (Objects.nonNull(TransactionRequestLogsUtils.getLogs())){
             logger.info("设置请求消息头该请求spanID：{}",TransactionRequestLogsUtils.getLogs().getLocal_node());
             template.header(PARENT_NODE_ID, TransactionRequestLogsUtils.getLogs().getLocal_node());
