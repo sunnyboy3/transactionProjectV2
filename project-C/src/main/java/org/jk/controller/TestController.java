@@ -18,7 +18,7 @@ public class TestController {
     @GetMapping(value = "testThreads")
     public Integer testThread(@RequestParam(value = "num") Integer num) throws InterruptedException {
         if (num == 8) {
-            Thread.sleep(5* 1000);
+            Thread.sleep(6000);
         };
         return num;
     }

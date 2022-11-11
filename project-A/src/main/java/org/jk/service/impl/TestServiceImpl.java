@@ -1,5 +1,6 @@
 package org.jk.service.impl;
 
+import com.google.common.collect.Lists;
 import org.jk.client.StockOpenFeignClient;
 import org.jk.entity.ParentServiceImpl;
 import org.jk.entity.User;
@@ -45,32 +46,27 @@ public class TestServiceImpl extends ParentServiceImpl implements TestService {
     @Override
     public void testCompletableFuture() throws ExecutionException, InterruptedException {
 
-        List<Integer> nameList = new ArrayList<Integer>();
+        List<Integer> classIds = new ArrayList<Integer>();
         for (int i = 0; i < 10; i++) {
-            nameList.add(i);
+            classIds.add(i);
         }
-        //从主线程获取所有request数据
-        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-
-        List<String> list = nameList.stream().map(k -> {
-            CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
-                logger.info("传递进入的数据:{}", k);
-                //其他线程放入request数据
-                RequestContextHolder.setRequestAttributes(requestAttributes);
-                return "success"+stockOpenFeignService.testThreadMethod(k);
+        List<Integer> result = new ArrayList<>();
+        classIds.forEach(k -> {
+            CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
+                //这里采用feignClient的方式将每个线程中的请求路由到其他微服务中，进行计算获取到计算的结果，在该主线程中在做处理
+                return stockOpenFeignService.testThreadMethod(k);
             }, asyncTaskExecutor).exceptionally(e -> {
                 logger.error("当前线程{},异步执行失败", Thread.currentThread().getName(), e);
-                return "fail"+k;
+                throw new RuntimeException("失败");
             });
             try {
-                return future.get(20,TimeUnit.SECONDS);
+                result.add(future.get(5,TimeUnit.SECONDS));
             } catch (Exception e) {
-                e.printStackTrace();
-                return "fail"+k;
+                logger.error("当前线程{},异步执行失败", Thread.currentThread().getName(), e);
+                throw new RuntimeException("失败");
             }
-
-        }).collect(Collectors.toList());
-        list.forEach(System.out::println);
+        });
+        result.forEach(System.out::println);
     }
 
     @Transactional
